@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Provider, Model } from "@/lib/providers";
+import { copyText } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface RefineBarProps {
@@ -55,7 +56,11 @@ export function RefineBar({
 
   const handleCopyResult = async () => {
     if (!result) return;
-    await navigator.clipboard.writeText(result);
+    const ok = await copyText(result);
+    if (!ok) {
+      toast.error("Copy failed");
+      return;
+    }
     setCopied(true);
     toast.success("Refined prompt copied");
     setTimeout(() => setCopied(false), 1500);

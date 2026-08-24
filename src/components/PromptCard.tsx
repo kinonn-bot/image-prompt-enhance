@@ -5,6 +5,7 @@ import { Copy, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { copyText } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface PromptCardProps {
@@ -17,7 +18,11 @@ export function PromptCard({ prompt, isStreaming, onChangePrompt }: PromptCardPr
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(prompt);
+    const ok = await copyText(prompt);
+    if (!ok) {
+      toast.error("Copy failed");
+      return;
+    }
     setCopied(true);
     toast.success("Copied to clipboard");
     setTimeout(() => setCopied(false), 1500);

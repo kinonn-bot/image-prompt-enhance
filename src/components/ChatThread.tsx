@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { copyText } from "@/lib/utils";
 import { toast } from "sonner";
 
 export interface ChatMsg {
@@ -28,7 +29,11 @@ export function ChatThread({ messages, streamingText, isStreaming }: ChatThreadP
   }, [messages, streamingText]);
 
   const handleCopy = async (text: string, idx: number) => {
-    await navigator.clipboard.writeText(text);
+    const ok = await copyText(text);
+    if (!ok) {
+      toast.error("Copy failed");
+      return;
+    }
     setCopiedIdx(idx);
     toast.success("Copied");
     setTimeout(() => setCopiedIdx(null), 1200);
