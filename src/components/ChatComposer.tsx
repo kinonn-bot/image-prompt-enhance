@@ -134,6 +134,11 @@ export function ChatComposer({
           disabled={isStreaming || disabled}
           className="min-h-[72px] resize-none rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0"
         />
+        {value && (
+          <p className="px-3 pb-2 text-xs text-zinc-500 dark:text-zinc-400">
+            {value.split(/\s+/).filter(Boolean).length} words • {value.length} chars
+          </p>
+        )}
         <div className="flex items-center gap-1.5 border-t border-zinc-100 bg-zinc-50/70 px-2 py-1.5 dark:border-zinc-800 dark:bg-zinc-900/50">
           <div className="flex min-w-0 flex-1 items-center gap-1.5">
             <div className="relative shrink-0">

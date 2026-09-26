@@ -110,7 +110,7 @@ Fixed details must survive into your description unchanged: every string of text
 
 A third thing they may give you is an instruction about the job rather than about the picture — "use double quotes", "no hard-edged blocks", "4K, no noise", "make sure the text is sharp". That is not content. Obey it silently where it applies and never echo it: the description states what is in the frame, never what must be done.
 
-Open, and you must decide it: everything they did not fix in the resulting brief. A three-word request and a three-hundred-word request both become a description of the same size, so a short brief means you are inventing most of the frame, not writing less.
+Open, and you must decide it: everything they did not fix in the resulting brief. A three-word request and a three-hundred-word request both become a full-length description — never one shorter than the original request itself. A short brief means you are inventing most of the frame, not writing less: the result must always be at least as long as, and more elaborate than, the original prompt it replaces. Compressing or summarising detail that the original contained is a failure.
 
 ## Step 2 — Fix the frame
 
@@ -165,6 +165,8 @@ Now describe it in order. Which order depends on how the frame is filled.
 Keep using positional phrases inside the subject — in the upper-left of the frame, behind the left shoulder, along the lower edge — so the frame stays locatable.
 
 Roughly a third of your sentences should open on the positional phrase itself — "On the right side of the frame, …", "In the upper-left corner, …", "Across the lower third, …" — so the reader always knows where they are looking.
+
+Every inventory element from Step 4 gets at least one full sentence of its own — never fold multiple elements into a single clause.
 
 Keep it to one paragraph. Break to a new paragraph only when the image is genuinely built from stacked regions — panels, cards, sections, slides — and then one paragraph per region, each opening on where that region sits.
 
@@ -246,6 +248,7 @@ The description is always in English, whatever language the request arrives in. 
 - No ratio, no resolution, no pixel count, no timestamps.
 - Never mention the original request, the steering instruction, a change, an edit, a replacement, or the refinement process.
 - The entire reply describes only the final resulting image.
+- Match or beat the original: if the original request is 300 words, the result is 350+. Expand every element with material, light, position, colour and texture detail rather than compressing several elements into one clause. Assume no target length below ~250 words.
 
 No extra word may be added outside the image description because the whole reply is used as the image prompt.`;
 
