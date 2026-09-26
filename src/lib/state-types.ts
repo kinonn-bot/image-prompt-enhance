@@ -1,4 +1,5 @@
 import type { Provider } from "@/lib/providers";
+import type { EffortSelection } from "@/lib/effort";
 
 /**
  * Settings slice — persisted per user when logged in.
@@ -13,6 +14,9 @@ export interface SettingsState {
   chatProviderId: string;
   chatModel: string;
   describePrompt: string;
+  selectedEffort?: EffortSelection;
+  refineEffort?: EffortSelection;
+  chatEffort?: EffortSelection;
 }
 
 /**

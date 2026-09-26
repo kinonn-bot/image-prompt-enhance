@@ -17,9 +17,17 @@ import {
   setSelectedChatProviderId,
   getSelectedChatModelId,
   setSelectedChatModelId,
+  getSelectedEffort,
+  setSelectedEffort,
+  getSelectedRefineEffort,
+  setSelectedRefineEffort,
+  getSelectedChatEffort,
+  setSelectedChatEffort,
   getProviderById,
 } from "@/lib/providers";
 import type { Provider, Model } from "@/lib/providers";
+import { isEffortSelection } from "@/lib/effort";
+import type { EffortSelection } from "@/lib/effort";
 import { useAuth } from "@/components/auth-context";
 import { DEFAULT_DESCRIBE_SYSTEM_PROMPT, loadDescribePrompt, saveDescribePrompt } from "@/lib/prompts";
 import type { SettingsState } from "@/lib/state-types";
@@ -34,6 +42,9 @@ interface ProvidersContextValue {
   refineModel: string;
   chatProviderId: string;
   chatModel: string;
+  selectedEffort: EffortSelection;
+  refineEffort: EffortSelection;
+  chatEffort: EffortSelection;
   describePrompt: string;
   setDescribePrompt: (v: string) => void;
   modelsCache: Record<string, Model[]>;
@@ -45,6 +56,9 @@ interface ProvidersContextValue {
   onSelectRefineModel: (id: string) => void;
   onSelectChatProvider: (id: string) => void;
   onSelectChatModel: (id: string) => void;
+  onSelectEffort: (v: EffortSelection) => void;
+  onSelectRefineEffort: (v: EffortSelection) => void;
+  onSelectChatEffort: (v: EffortSelection) => void;
   selectedProvider: Provider | undefined;
   refineProvider: Provider | undefined;
   chatProvider: Provider | undefined;
@@ -63,9 +77,14 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
   const [refineModel, setRefineModel] = React.useState("");
   const [chatProviderId, setChatProviderIdState] = React.useState("");
   const [chatModel, setChatModel] = React.useState("");
+  const [selectedEffort, setSelectedEffortState] = React.useState<EffortSelection>("");
+  const [refineEffort, setRefineEffort] = React.useState<EffortSelection>("");
+  const [chatEffort, setChatEffort] = React.useState<EffortSelection>("");
   const [describePrompt, setDescribePromptState] = React.useState(DEFAULT_DESCRIBE_SYSTEM_PROMPT);
   const [modelsCache, setModelsCache] = React.useState<Record<string, Model[]>>({});
   const [loadingModelsFor, setLoadingModelsFor] = React.useState<string | null>(null);
+
+  const sanitizeEffort = (v: string | null | undefined): EffortSelection => (isEffortSelection(v) ? v : "");
 
   const applySettings = React.useCallback((s: SettingsState) => {
     setProviders(s.providers?.length ? s.providers : loadProviders());
@@ -76,6 +95,9 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
     setChatProviderIdState(s.chatProviderId || "");
     setChatModel(s.chatModel || "");
     setDescribePromptState(s.describePrompt || DEFAULT_DESCRIBE_SYSTEM_PROMPT);
+    setSelectedEffortState(sanitizeEffort(s.selectedEffort ?? getSelectedEffort()));
+    setRefineEffort(sanitizeEffort(s.refineEffort ?? getSelectedRefineEffort()));
+    setChatEffort(sanitizeEffort(s.chatEffort ?? getSelectedChatEffort()));
   }, []);
 
   const settingsFromLocalStorage = React.useCallback((): SettingsState => {
@@ -90,6 +112,9 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
       chatProviderId: getSelectedChatProviderId() || selP,
       chatModel: getSelectedChatModelId() || "",
       describePrompt: loadDescribePrompt(),
+      selectedEffort: sanitizeEffort(getSelectedEffort()),
+      refineEffort: sanitizeEffort(getSelectedRefineEffort()),
+      chatEffort: sanitizeEffort(getSelectedChatEffort()),
     };
   }, []);
 
@@ -147,6 +172,9 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
             chatProviderId,
             chatModel,
             describePrompt,
+            selectedEffort,
+            refineEffort,
+            chatEffort,
           },
         }),
       }).catch(() => {});
@@ -154,7 +182,7 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
     return () => {
       if (syncTimer.current) clearTimeout(syncTimer.current);
     };
-  }, [loggedIn, hydrated, providers, selectedProviderId, selectedModel, refineProviderId, refineModel, chatProviderId, chatModel, describePrompt]);
+  }, [loggedIn, hydrated, providers, selectedProviderId, selectedModel, refineProviderId, refineModel, chatProviderId, chatModel, describePrompt, selectedEffort, refineEffort, chatEffort]);
 
   const save = (next: Provider[]) => {
     setProviders(next);
@@ -245,6 +273,18 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
     setDescribePromptState(v);
     if (!loggedIn) saveDescribePrompt(v);
   };
+  const onSelectEffort = (v: EffortSelection) => {
+    setSelectedEffortState(v);
+    if (!loggedIn) setSelectedEffort(v);
+  };
+  const onSelectRefineEffort = (v: EffortSelection) => {
+    setRefineEffort(v);
+    if (!loggedIn) setSelectedRefineEffort(v);
+  };
+  const onSelectChatEffort = (v: EffortSelection) => {
+    setChatEffort(v);
+    if (!loggedIn) setSelectedChatEffort(v);
+  };
 
   React.useEffect(() => {
     const dm = modelsCache[selectedProviderId];
@@ -277,6 +317,9 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
     refineModel,
     chatProviderId,
     chatModel,
+    selectedEffort,
+    refineEffort,
+    chatEffort,
     describePrompt,
     setDescribePrompt,
     modelsCache,
@@ -288,6 +331,9 @@ export function ProvidersProvider({ children }: { children: React.ReactNode }) {
     onSelectRefineModel,
     onSelectChatProvider,
     onSelectChatModel,
+    onSelectEffort,
+    onSelectRefineEffort,
+    onSelectChatEffort,
     selectedProvider,
     refineProvider,
     chatProvider,
