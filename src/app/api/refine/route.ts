@@ -58,6 +58,8 @@ export async function POST(req: NextRequest) {
 
     const contentType = upstream.headers.get("content-type") || "";
     if (contentType.includes("text/event-stream")) {
+      // Thinking/reasoning events are displayed, not suppressed — the
+      // upstream SSE stream is forwarded verbatim.
       return new Response(upstream.body, {
         headers: {
           "Content-Type": "text/event-stream",

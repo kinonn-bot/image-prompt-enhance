@@ -16,20 +16,32 @@ export function extractResponseText(json: unknown): string {
   const choices = Array.isArray(json.choices) ? json.choices : [];
   const first = choices[0];
   if (isObj(first)) {
-    const msgText = isObj(first.message) ? str(first.message.content) : "";
-    if (msgText) return msgText;
+    // Thinking/reasoning traces are displayed alongside the final text.
+    const msg = isObj(first.message) ? first.message : undefined;
+    const thinking = msg
+      ? str(msg.reasoning_content) || str(msg.reasoning) || str(msg.thinking)
+      : "";
+    const msgText = msg ? str(msg.content) : "";
+    if (msgText) return thinking + msgText;
     const firstText = str(first.text);
-    if (firstText) return firstText;
+    if (firstText) return thinking + firstText;
     const deltaText = isObj(first.delta) ? str(first.delta.content) : "";
-    if (deltaText) return deltaText;
+    if (deltaText) return thinking + deltaText;
+    if (thinking) return thinking;
   }
 
   if (Array.isArray(json.content)) {
+    // Anthropic-style thinking blocks ride alongside the text blocks.
+    const thinking = json.content
+      .filter((c): c is Obj => isObj(c) && c.type === "thinking")
+      .map((c) => str(c.thinking))
+      .join("");
     const joined = json.content
       .filter((c): c is Obj => isObj(c) && (c.type === "text" || c.type === undefined))
       .map((c) => str(c.text))
       .join("");
-    if (joined) return joined;
+    if (joined) return thinking + joined;
+    if (thinking) return thinking;
   } else {
     const s = str(json.content);
     if (s) return s;
@@ -46,7 +58,11 @@ export function extractResponseText(json: unknown): string {
         return o.content
           .filter(
             (c): c is Obj =>
-              isObj(c) && (c.type === "text" || c.type === "output_text" || c.type === "input_text")
+              isObj(c) &&
+              (c.type === "text" ||
+                c.type === "output_text" ||
+                c.type === "input_text" ||
+                c.type === "summary_text")
           )
           .map((c) => str(c.text))
           .join("");

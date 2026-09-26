@@ -7,9 +7,23 @@ export function parseSSEChunk(chunk: string, onText: (t: string) => void) {
     if (!data || data === "[DONE]" || data === "[done]") continue;
     try {
       const json = JSON.parse(data);
-      if (json.delta?.type === "thinking_delta" || json.delta?.thinking !== undefined || json.delta?.reasoning !== undefined) continue;
-      if (json.delta?.type === "reasoning_delta") continue;
-      if (json.type === "content_block_delta" && json.delta?.type === "thinking_delta") continue;
+
+      // Thinking/reasoning traces are displayed, not suppressed — emit them
+      // in arrival order (they stream before the final answer).
+      const thinking =
+        json.choices?.[0]?.delta?.reasoning ??
+        json.choices?.[0]?.delta?.reasoning_content ??
+        json.choices?.[0]?.message?.reasoning_content ??
+        json.choices?.[0]?.message?.reasoning ??
+        json.delta?.thinking ??
+        json.delta?.reasoning ??
+        json.delta?.reasoning_content ??
+        "";
+      if (typeof thinking === "string" && thinking) onText(thinking);
+      // Responses-style reasoning events carry the text in a bare string delta.
+      if (typeof json.delta === "string" && typeof json.type === "string" && /reasoning|thinking/.test(json.type)) {
+        onText(json.delta);
+      }
 
       const choiceDelta =
         json.choices?.[0]?.delta?.content ??
@@ -18,12 +32,24 @@ export function parseSSEChunk(chunk: string, onText: (t: string) => void) {
         (typeof json.content === "string" ? json.content : "") ??
         "";
       if (typeof choiceDelta === "string" && choiceDelta) onText(choiceDelta);
+      // Top-level `delta.content` — proxies that omit the choices envelope.
+      if (
+        !json.choices &&
+        typeof json.delta === "object" &&
+        json.delta !== null &&
+        typeof json.delta.content === "string" &&
+        json.delta.content
+      ) {
+        onText(json.delta.content);
+      }
       if (json.choices?.[0]?.delta?.text) onText(json.choices[0].delta.text);
       if (json.content && typeof json.content === "string" && !json.choices) onText(json.content);
       if (json.text && typeof json.text === "string" && !json.choices) onText(json.text);
       if (json.delta?.type === "text_delta" && typeof json.delta.text === "string") onText(json.delta.text);
-      else if (json.delta?.text && typeof json.delta.text === "string" && json.delta?.type !== "thinking_delta") {
-        if (json.delta.thinking === undefined && json.delta.reasoning === undefined) onText(json.delta.text);
+      else if (json.delta?.text && typeof json.delta.text === "string") {
+        // An explicit `text` field is displayable text; thinking deltas carry
+        // their own `thinking` field, which is emitted above.
+        onText(json.delta.text);
       }
       if (json.delta?.delta?.text) onText(json.delta.delta.text);
       if (json.type?.includes("output_text") && typeof json.delta === "string") onText(json.delta);

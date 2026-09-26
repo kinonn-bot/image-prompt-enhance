@@ -103,7 +103,11 @@ export function buildAnthropicPayload(model: string, system: string, userContent
   return {
     model,
     stream: true,
-    max_tokens: 2048,
+    // Anthropic-style requests require max_tokens. It must exceed the largest
+    // thinking budget (16384) and still leave room for the final answer:
+    // reasoning models otherwise burn the whole cap on thinking and stream no
+    // text at all, which surfaces as an empty refinement.
+    max_tokens: 32768,
     system,
     messages: [{ role: "user", content }],
     ...applyThinkingEffort("messages", effort),
@@ -128,48 +132,3 @@ export function buildResponsesPayload(model: string, system: string, userContent
   };
 }
 
-export function parseSSEResponse(chunk: string): string {
-  // chunk may contain multiple lines: data: {...}\n\n
-  let text = "";
-  const lines = chunk.split("\n");
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed.startsWith("data:")) continue;
-    const data = trimmed.slice(5).trim();
-    if (data === "[DONE]" || data === "[done]") continue;
-    try {
-      const json = JSON.parse(data);
-
-      // Skip thinking/reasoning deltas — we only want final prompt text
-      if (json.delta?.type === "thinking_delta" || json.delta?.thinking !== undefined || json.delta?.reasoning !== undefined) continue;
-      if (json.delta?.type === "reasoning_delta") continue;
-      if (json.type === "content_block_delta" && json.delta?.type === "thinking_delta") continue;
-
-      // OpenAI Chat Completions
-      const choiceDelta =
-        json.choices?.[0]?.delta?.content ?? json.choices?.[0]?.message?.content ?? json.choices?.[0]?.text ?? "";
-      if (typeof choiceDelta === "string" && choiceDelta) text += choiceDelta;
-
-      // Common fallback (only if not thinking)
-      if (typeof json.content === "string" && json.content) text += json.content;
-      if (typeof json.text === "string" && json.text && !json.choices) text += json.text;
-
-      // Anthropic messages: {"type":"content_block_delta","delta":{"type":"text_delta","text":"..."}}
-      if (json.delta?.type === "text_delta" && typeof json.delta.text === "string") text += json.delta.text;
-      else if (json.delta?.text && typeof json.delta.text === "string" && json.delta?.type !== "thinking_delta") {
-        // fallback for providers that use delta.text without explicit type, but ensure not thinking
-        if (json.delta.thinking === undefined && json.delta.reasoning === undefined) text += json.delta.text;
-      }
-      if (json.delta?.delta?.text) text += json.delta.delta.text;
-      // OpenAI Responses API: {"type":"response.output_text.delta","delta":"..."}
-      if (json.type?.includes("output_text") && typeof json.delta === "string") text += json.delta;
-      if (json.output_text && typeof json.output_text === "string") text += json.output_text;
-
-      // DeepSeek etc. alternative
-      if (json.choices?.[0]?.delta?.text) text += json.choices[0].delta.text;
-    } catch {
-      // ignore parse errors for keep-alive pings
-    }
-  }
-  return text;
-}
